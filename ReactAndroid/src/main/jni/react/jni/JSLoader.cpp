@@ -1,16 +1,21 @@
-// Copyright 2004-present Facebook. All Rights Reserved.
+// Copyright (c) 2004-present, Facebook, Inc.
+
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
 
 #include "JSLoader.h"
 
+#include <android/asset_manager_jni.h>
+#include <cxxreact/JSBigString.h>
+#include <fb/fbjni.h>
+#include <fb/log.h>
 #include <folly/Conv.h>
 #include <folly/Memory.h>
-#include <android/asset_manager_jni.h>
-#include <fb/fbjni.h>
 #include <fstream>
 #include <sstream>
 #include <streambuf>
 #include <string>
-#include <fb/log.h>
+
 #ifdef WITH_FBSYSTRACE
 #include <fbsystrace.h>
 using fbsystrace::FbSystraceSection;

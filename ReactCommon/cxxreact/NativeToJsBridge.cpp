@@ -1,20 +1,27 @@
-// Copyright 2004-present Facebook. All Rights Reserved.
+// Copyright (c) 2004-present, Facebook, Inc.
+
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
 
 #include "NativeToJsBridge.h"
+
+#include <folly/json.h>
+#include <folly/Memory.h>
+#include <folly/MoveWrapper.h>
+#include <glog/logging.h>
+
+#include "Instance.h"
+#include "JSBigString.h"
+#include "SystraceSection.h"
+#include "MethodCall.h"
+#include "MessageQueueThread.h"
+#include "ModuleRegistry.h"
+#include "RAMBundleRegistry.h"
 
 #ifdef WITH_FBSYSTRACE
 #include <fbsystrace.h>
 using fbsystrace::FbSystraceAsyncFlow;
 #endif
-
-#include <folly/json.h>
-#include <folly/Memory.h>
-#include <folly/MoveWrapper.h>
-
-#include "Instance.h"
-#include "ModuleRegistry.h"
-#include "Platform.h"
-#include "SystraceSection.h"
 
 namespace facebook {
 namespace react {
@@ -89,32 +96,43 @@ NativeToJsBridge::~NativeToJsBridge() {
 }
 
 void NativeToJsBridge::loadApplication(
-    std::unique_ptr<JSModulesUnbundle> unbundle,
+    std::unique_ptr<RAMBundleRegistry> bundleRegistry,
     std::unique_ptr<const JSBigString> startupScript,
     std::string startupScriptSourceURL) {
   runOnExecutorQueue(
-      [unbundleWrap=folly::makeMoveWrapper(std::move(unbundle)),
+      [this,
+       bundleRegistryWrap=folly::makeMoveWrapper(std::move(bundleRegistry)),
        startupScript=folly::makeMoveWrapper(std::move(startupScript)),
        startupScriptSourceURL=std::move(startupScriptSourceURL)]
         (JSExecutor* executor) mutable {
-    auto unbundle = unbundleWrap.move();
-    if (unbundle) {
-      executor->setJSModulesUnbundle(std::move(unbundle));
+    auto bundleRegistry = bundleRegistryWrap.move();
+    if (bundleRegistry) {
+      executor->setBundleRegistry(std::move(bundleRegistry));
     }
-    executor->loadApplicationScript(std::move(*startupScript),
-                                    std::move(startupScriptSourceURL));
+    try {
+      executor->loadApplicationScript(std::move(*startupScript),
+                                      std::move(startupScriptSourceURL));
+    } catch (...) {
+      m_applicationScriptHasFailure = true;
+      throw;
+    }
   });
 }
 
 void NativeToJsBridge::loadApplicationSync(
-    std::unique_ptr<JSModulesUnbundle> unbundle,
+    std::unique_ptr<RAMBundleRegistry> bundleRegistry,
     std::unique_ptr<const JSBigString> startupScript,
     std::string startupScriptSourceURL) {
-  if (unbundle) {
-    m_executor->setJSModulesUnbundle(std::move(unbundle));
+  if (bundleRegistry) {
+    m_executor->setBundleRegistry(std::move(bundleRegistry));
   }
-  m_executor->loadApplicationScript(std::move(startupScript),
-                                        std::move(startupScriptSourceURL));
+  try {
+    m_executor->loadApplicationScript(std::move(startupScript),
+                                          std::move(startupScriptSourceURL));
+  } catch (...) {
+    m_applicationScriptHasFailure = true;
+    throw;
+  }
 }
 
 void NativeToJsBridge::callFunction(
@@ -130,8 +148,13 @@ void NativeToJsBridge::callFunction(
       systraceCookie);
   #endif
 
-  runOnExecutorQueue([module = std::move(module), method = std::move(method), arguments = std::move(arguments), systraceCookie]
+  runOnExecutorQueue([this, module = std::move(module), method = std::move(method), arguments = std::move(arguments), systraceCookie]
     (JSExecutor* executor) {
+      if (m_applicationScriptHasFailure) {
+        LOG(ERROR) << "Attempting to call JS function on a bad application bundle: " << module.c_str() << "." << method.c_str() << "()";
+        throw std::runtime_error("Attempting to call JS function on a bad application bundle: " + module + "." + method + "()");
+      }
+
       #ifdef WITH_FBSYSTRACE
       FbSystraceAsyncFlow::end(
           TRACE_TAG_REACT_CXX_BRIDGE,
@@ -156,8 +179,12 @@ void NativeToJsBridge::invokeCallback(double callbackId, folly::dynamic&& argume
       systraceCookie);
   #endif
 
-  runOnExecutorQueue([callbackId, arguments = std::move(arguments), systraceCookie]
+  runOnExecutorQueue([this, callbackId, arguments = std::move(arguments), systraceCookie]
     (JSExecutor* executor) {
+      if (m_applicationScriptHasFailure) {
+        LOG(ERROR) << "Attempting to call JS callback on a bad application bundle: " << callbackId;
+        throw std::runtime_error("Attempting to invoke JS callback on a bad application bundle.");
+      }
       #ifdef WITH_FBSYSTRACE
       FbSystraceAsyncFlow::end(
           TRACE_TAG_REACT_CXX_BRIDGE,
@@ -167,6 +194,12 @@ void NativeToJsBridge::invokeCallback(double callbackId, folly::dynamic&& argume
       #endif
       executor->invokeCallback(callbackId, arguments);
     });
+}
+
+void NativeToJsBridge::registerBundle(uint32_t bundleId, const std::string& bundlePath) {
+  runOnExecutorQueue([bundleId, bundlePath] (JSExecutor* executor) {
+    executor->registerBundle(bundleId, bundlePath);
+  });
 }
 
 void NativeToJsBridge::setGlobalVariable(std::string propName,
@@ -182,38 +215,13 @@ void* NativeToJsBridge::getJavaScriptContext() {
   return m_executor->getJavaScriptContext();
 }
 
-bool NativeToJsBridge::supportsProfiling() {
-  // Intentionally doesn't post to jsqueue. supportsProfiling() can be called from any thread.
-  return m_executor->supportsProfiling();
+bool NativeToJsBridge::isInspectable() {
+  return m_executor->isInspectable();
 }
 
-void NativeToJsBridge::startProfiler(const std::string& title) {
+void NativeToJsBridge::handleMemoryPressure(int pressureLevel) {
   runOnExecutorQueue([=] (JSExecutor* executor) {
-    executor->startProfiler(title);
-  });
-}
-
-void NativeToJsBridge::stopProfiler(const std::string& title, const std::string& filename) {
-  runOnExecutorQueue([=] (JSExecutor* executor) {
-    executor->stopProfiler(title, filename);
-  });
-}
-
-void NativeToJsBridge::handleMemoryPressureUiHidden() {
-  runOnExecutorQueue([=] (JSExecutor* executor) {
-    executor->handleMemoryPressureUiHidden();
-  });
-}
-
-void NativeToJsBridge::handleMemoryPressureModerate() {
-  runOnExecutorQueue([=] (JSExecutor* executor) {
-    executor->handleMemoryPressureModerate();
-  });
-}
-
-void NativeToJsBridge::handleMemoryPressureCritical() {
-  runOnExecutorQueue([=] (JSExecutor* executor) {
-    executor->handleMemoryPressureCritical();
+    executor->handleMemoryPressure(pressureLevel);
   });
 }
 

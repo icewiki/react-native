@@ -1,4 +1,7 @@
-// Copyright 2004-present Facebook. All Rights Reserved.
+// Copyright (c) 2004-present, Facebook, Inc.
+
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
 
 package com.facebook.react.uimanager;
 
@@ -12,4 +15,10 @@ public interface ReactZIndexedViewGroup {
    * @return The child view index considering z-index
    */
   int getZIndexMappedChildIndex(int index);
+
+  /**
+   * Redraw the view based on updated child z-index. This should be called after updating one of its child
+   * z-index.
+   */
+  void updateDrawingOrder();
 }

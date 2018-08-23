@@ -1,14 +1,13 @@
 /**
  * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
  *
- * This source code is licensed under the BSD-style license found in the
- * LICENSE file in the root directory of this source tree. An additional grant
- * of patent rights can be found in the PATENTS file in the same directory.
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
  *
- * @flow
- * @providesModule StatusBarExample
+ * @format
+ * @flow strict-local
  */
+
 'use strict';
 
 const React = require('react');
@@ -19,33 +18,24 @@ const {
   Text,
   TouchableHighlight,
   View,
+  Modal,
 } = ReactNative;
 
 exports.framework = 'React';
 exports.title = '<StatusBar>';
 exports.description = 'Component for controlling the status bar';
 
-const colors = [
-  '#ff0000',
-  '#00ff00',
-  '#0000ff',
-];
+const colors = ['#ff0000', '#00ff00', '#0000ff', 'rgba(0, 0, 0, 0.4)'];
 
-const barStyles = [
-  'default',
-  'light-content',
-];
+const barStyles = ['default', 'light-content'];
 
-const showHideTransitions = [
-  'fade',
-  'slide',
-];
+const showHideTransitions = ['fade', 'slide'];
 
 function getValue<T>(values: Array<T>, index: number): T {
   return values[index % values.length];
 }
 
-class StatusBarHiddenExample extends React.Component {
+class StatusBarHiddenExample extends React.Component<{}, $FlowFixMeState> {
   state = {
     animated: true,
     hidden: false,
@@ -65,7 +55,10 @@ class StatusBarHiddenExample extends React.Component {
   _onChangeTransition = () => {
     this._showHideTransitionIndex++;
     this.setState({
-      showHideTransition: getValue(showHideTransitions, this._showHideTransitionIndex),
+      showHideTransition: getValue(
+        showHideTransitions,
+        this._showHideTransitionIndex,
+      ),
     });
   };
 
@@ -88,7 +81,9 @@ class StatusBarHiddenExample extends React.Component {
           style={styles.wrapper}
           onPress={this._onChangeAnimated}>
           <View style={styles.button}>
-            <Text>animated (ios only): {this.state.animated ? 'true' : 'false'}</Text>
+            <Text>
+              animated (ios only): {this.state.animated ? 'true' : 'false'}
+            </Text>
           </View>
         </TouchableHighlight>
         <TouchableHighlight
@@ -96,17 +91,20 @@ class StatusBarHiddenExample extends React.Component {
           onPress={this._onChangeTransition}>
           <View style={styles.button}>
             <Text>
-              showHideTransition (ios only):
-              '{getValue(showHideTransitions, this._showHideTransitionIndex)}'
+              showHideTransition (ios only): '{getValue(
+                showHideTransitions,
+                this._showHideTransitionIndex,
+              )}'
             </Text>
           </View>
         </TouchableHighlight>
+        <ModalExample />
       </View>
     );
   }
 }
 
-class StatusBarStyleExample extends React.Component {
+class StatusBarStyleExample extends React.Component<{}, $FlowFixMeState> {
   _barStyleIndex = 0;
 
   _onChangeBarStyle = () => {
@@ -149,14 +147,18 @@ class StatusBarStyleExample extends React.Component {
   }
 }
 
-class StatusBarNetworkActivityExample extends React.Component {
+class StatusBarNetworkActivityExample extends React.Component<
+  {},
+  $FlowFixMeState,
+> {
   state = {
     networkActivityIndicatorVisible: false,
   };
 
   _onChangeNetworkIndicatorVisible = () => {
     this.setState({
-      networkActivityIndicatorVisible: !this.state.networkActivityIndicatorVisible,
+      networkActivityIndicatorVisible: !this.state
+        .networkActivityIndicatorVisible,
     });
   };
 
@@ -164,7 +166,9 @@ class StatusBarNetworkActivityExample extends React.Component {
     return (
       <View>
         <StatusBar
-          networkActivityIndicatorVisible={this.state.networkActivityIndicatorVisible}
+          networkActivityIndicatorVisible={
+            this.state.networkActivityIndicatorVisible
+          }
         />
         <TouchableHighlight
           style={styles.wrapper}
@@ -181,7 +185,10 @@ class StatusBarNetworkActivityExample extends React.Component {
   }
 }
 
-class StatusBarBackgroundColorExample extends React.Component {
+class StatusBarBackgroundColorExample extends React.Component<
+  {},
+  $FlowFixMeState,
+> {
   state = {
     animated: true,
     backgroundColor: getValue(colors, 0),
@@ -224,7 +231,7 @@ class StatusBarBackgroundColorExample extends React.Component {
   }
 }
 
-class StatusBarTranslucentExample extends React.Component {
+class StatusBarTranslucentExample extends React.Component<{}, $FlowFixMeState> {
   state = {
     translucent: false,
   };
@@ -238,14 +245,14 @@ class StatusBarTranslucentExample extends React.Component {
   render() {
     return (
       <View>
-        <StatusBar
-          translucent={this.state.translucent}
-        />
+        <StatusBar translucent={this.state.translucent} />
         <TouchableHighlight
           style={styles.wrapper}
           onPress={this._onChangeTranslucent}>
           <View style={styles.button}>
-            <Text>translucent: {this.state.translucent ? 'true' : 'false'}</Text>
+            <Text>
+              translucent: {this.state.translucent ? 'true' : 'false'}
+            </Text>
           </View>
         </TouchableHighlight>
       </View>
@@ -253,7 +260,7 @@ class StatusBarTranslucentExample extends React.Component {
   }
 }
 
-class StatusBarStaticIOSExample extends React.Component {
+class StatusBarStaticIOSExample extends React.Component<{}> {
   render() {
     return (
       <View>
@@ -316,7 +323,7 @@ class StatusBarStaticIOSExample extends React.Component {
   }
 }
 
-class StatusBarStaticAndroidExample extends React.Component {
+class StatusBarStaticAndroidExample extends React.Component<{}> {
   render() {
     return (
       <View>
@@ -363,7 +370,10 @@ class StatusBarStaticAndroidExample extends React.Component {
             StatusBar.setBackgroundColor('rgba(0, 0, 0, 0.4)', true);
           }}>
           <View style={styles.button}>
-            <Text>setTranslucent(true) and setBackgroundColor('rgba(0, 0, 0, 0.4)', true)</Text>
+            <Text>
+              setTranslucent(true) and setBackgroundColor('rgba(0, 0, 0, 0.4)',
+              true)
+            </Text>
           </View>
         </TouchableHighlight>
         <TouchableHighlight
@@ -373,7 +383,9 @@ class StatusBarStaticAndroidExample extends React.Component {
             StatusBar.setBackgroundColor('black', true);
           }}>
           <View style={styles.button}>
-            <Text>setTranslucent(false) and setBackgroundColor('black', true)</Text>
+            <Text>
+              setTranslucent(false) and setBackgroundColor('black', true)
+            </Text>
           </View>
         </TouchableHighlight>
       </View>
@@ -381,62 +393,122 @@ class StatusBarStaticAndroidExample extends React.Component {
   }
 }
 
-const examples = [{
-  title: 'StatusBar hidden',
-  render() {
-    return <StatusBarHiddenExample />;
-  },
-}, {
-  title: 'StatusBar style',
-  render() {
-    return <StatusBarStyleExample />;
-  },
-  platform: 'ios',
-}, {
-  title: 'StatusBar network activity indicator',
-  render() {
-    return <StatusBarNetworkActivityExample />;
-  },
-  platform: 'ios',
-}, {
-  title: 'StatusBar background color',
-  render() {
-    return <StatusBarBackgroundColorExample />;
-  },
-  platform: 'android',
-}, {
-  title: 'StatusBar background color',
-  render() {
-    return <StatusBarTranslucentExample />;
-  },
-  platform: 'android',
-}, {
-  title: 'StatusBar static API',
-  render() {
-    return <StatusBarStaticIOSExample />;
-  },
-  platform: 'ios',
-}, {
-  title: 'StatusBar static API',
-  render() {
-    return <StatusBarStaticAndroidExample />;
-  },
-  platform: 'android',
-}, {
-  title: 'StatusBar dimensions',
+class ModalExample extends React.Component<{}, $FlowFixMeState> {
+  state = {
+    modalVisible: false,
+  };
+
+  _onChangeModalVisible = () => {
+    this.setState({modalVisible: !this.state.modalVisible});
+  };
+
   render() {
     return (
       <View>
-        <Text>Height (Android only): {StatusBar.currentHeight} pts</Text>
+        <TouchableHighlight
+          style={styles.wrapper}
+          onPress={this._onChangeModalVisible}>
+          <View style={styles.button}>
+            <Text>modal visible: {this.state.hidden ? 'true' : 'false'}</Text>
+          </View>
+        </TouchableHighlight>
+        <Modal
+          visible={this.state.modalVisible}
+          transparent={true}
+          onRequestClose={this._onChangeModalVisible}>
+          <View style={[styles.container]}>
+            <View style={[styles.innerContainer]}>
+              <Text>This modal was presented!</Text>
+              <TouchableHighlight
+                onPress={this._onChangeModalVisible}
+                style={styles.modalButton}>
+                <View style={styles.button}>
+                  <Text>Close</Text>
+                </View>
+              </TouchableHighlight>
+            </View>
+          </View>
+        </Modal>
       </View>
     );
+  }
+}
+
+const examples = [
+  {
+    title: 'StatusBar hidden',
+    render() {
+      return <StatusBarHiddenExample />;
+    },
   },
-  platform: 'android',
-}];
+  {
+    title: 'StatusBar style',
+    render() {
+      return <StatusBarStyleExample />;
+    },
+    platform: 'ios',
+  },
+  {
+    title: 'StatusBar network activity indicator',
+    render() {
+      return <StatusBarNetworkActivityExample />;
+    },
+    platform: 'ios',
+  },
+  {
+    title: 'StatusBar background color',
+    render() {
+      return <StatusBarBackgroundColorExample />;
+    },
+    platform: 'android',
+  },
+  {
+    title: 'StatusBar translucent',
+    render() {
+      return <StatusBarTranslucentExample />;
+    },
+    platform: 'android',
+  },
+  {
+    title: 'StatusBar static API',
+    render() {
+      return <StatusBarStaticIOSExample />;
+    },
+    platform: 'ios',
+  },
+  {
+    title: 'StatusBar static API',
+    render() {
+      return <StatusBarStaticAndroidExample />;
+    },
+    platform: 'android',
+  },
+  {
+    title: 'StatusBar dimensions',
+    render() {
+      return (
+        <View>
+          <Text>Height (Android only): {StatusBar.currentHeight} pts</Text>
+        </View>
+      );
+    },
+    platform: 'android',
+  },
+];
 
 exports.examples = examples;
 
 var styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    justifyContent: 'center',
+    padding: 20,
+    backgroundColor: '#f5fcff',
+  },
+  innerContainer: {
+    borderRadius: 10,
+    alignItems: 'center',
+  },
   wrapper: {
     borderRadius: 5,
     marginBottom: 5,
@@ -450,5 +522,8 @@ var styles = StyleSheet.create({
     marginTop: 16,
     marginBottom: 8,
     fontWeight: 'bold',
-  }
+  },
+  modalButton: {
+    marginTop: 10,
+  },
 });

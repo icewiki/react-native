@@ -36,6 +36,9 @@ buck-out
 /ReactAndroid/src/main/jni/prebuilt/lib/x86/
 /ReactAndroid/src/main/gen
 
+# Watchman
+.watchmanconfig
+
 # Android
 .idea
 .gradle
@@ -47,6 +50,8 @@ local.properties
 node_modules
 *.log
 .nvm
+/bots/node_modules/
+package-lock.json
 
 # OS X
 .DS_Store
@@ -57,3 +62,10 @@ node_modules
 
 /coverage
 /third-party
+
+# Root dir shouldn't have Xcode project
+/*.xcodeproj
+
+# ReactCommon subdir shouldn't have Xcode project
+/ReactCommon/**/*.xcodeproj
+RNTester/build

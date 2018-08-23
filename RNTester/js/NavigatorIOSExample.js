@@ -1,14 +1,13 @@
 /**
  * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
  *
- * This source code is licensed under the BSD-style license found in the
- * LICENSE file in the root directory of this source tree. An additional grant
- * of patent rights can be found in the PATENTS file in the same directory.
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
  *
+ * @format
  * @flow
- * @providesModule NavigatorIOSExample
  */
+
 'use strict';
 
 const React = require('react');
@@ -27,19 +26,17 @@ const {
   View,
 } = ReactNative;
 
-class EmptyPage extends React.Component {
+class EmptyPage extends React.Component<$FlowFixMeProps> {
   render() {
     return (
       <View style={styles.emptyPage}>
-        <Text style={styles.emptyPageText}>
-          {this.props.text}
-        </Text>
+        <Text style={styles.emptyPageText}>{this.props.text}</Text>
       </View>
     );
   }
 }
 
-class NavigatorIOSExamplePage extends React.Component {
+class NavigatorIOSExamplePage extends React.Component<$FlowFixMeProps> {
   render() {
     var recurseTitle = 'Recurse Navigation';
     if (!this.props.depth || this.props.depth === 1) {
@@ -47,7 +44,7 @@ class NavigatorIOSExamplePage extends React.Component {
     }
     return (
       <ScrollView style={styles.list}>
-        <View style={styles.line}/>
+        <View style={styles.line} />
         <View style={styles.group}>
           {this._renderRow(recurseTitle, () => {
             this.props.navigator.push({
@@ -78,7 +75,7 @@ class NavigatorIOSExamplePage extends React.Component {
               onRightButtonPress: () => this.props.navigator.pop(),
               passProps: {
                 text: 'This page has a right button in the nav bar',
-              }
+              },
             });
           })}
           {this._renderRow('Custom Right System Button', () => {
@@ -89,7 +86,7 @@ class NavigatorIOSExamplePage extends React.Component {
               onRightButtonPress: () => this.props.navigator.pop(),
               passProps: {
                 text: 'This page has a right system button in the nav bar',
-              }
+              },
             });
           })}
           {this._renderRow('Custom Left & Right Icons', () => {
@@ -101,7 +98,7 @@ class NavigatorIOSExamplePage extends React.Component {
               rightButtonIcon: nativeImageSource({
                 ios: 'NavBarButtonPlus',
                 width: 17,
-                height: 17
+                height: 17,
               }),
               onRightButtonPress: () => {
                 AlertIOS.alert(
@@ -112,12 +109,13 @@ class NavigatorIOSExamplePage extends React.Component {
                       text: 'OK',
                       onPress: () => console.log('Tapped OK'),
                     },
-                  ]
+                  ],
                 );
               },
               passProps: {
-                text: 'This page has an icon for the right button in the nav bar',
-              }
+                text:
+                  'This page has an icon for the right button in the nav bar',
+              },
             });
           })}
           {this._renderRow('Custom Left & Right System Icons', () => {
@@ -136,12 +134,13 @@ class NavigatorIOSExamplePage extends React.Component {
                       text: 'OK',
                       onPress: () => console.log('Tapped OK'),
                     },
-                  ]
+                  ],
                 );
               },
               passProps: {
-                text: 'This page has an icon for the right button in the nav bar',
-              }
+                text:
+                  'This page has an icon for the right button in the nav bar',
+              },
             });
           })}
           {this._renderRow('Pop', () => {
@@ -153,9 +152,12 @@ class NavigatorIOSExamplePage extends React.Component {
           {this._renderReplace()}
           {this._renderReplacePrevious()}
           {this._renderReplacePreviousAndPop()}
-          {this._renderRow('Exit NavigatorIOS Example', this.props.onExampleExit)}
+          {this._renderRow(
+            'Exit NavigatorIOS Example',
+            this.props.onExampleExit,
+          )}
         </View>
-        <View style={styles.line}/>
+        <View style={styles.line} />
       </ScrollView>
     );
   }
@@ -173,9 +175,10 @@ class NavigatorIOSExamplePage extends React.Component {
         rightButtonTitle: 'Undo',
         onRightButtonPress: () => this.props.navigator.replace(prevRoute),
         passProps: {
-          text: 'The component is replaced, but there is currently no ' +
+          text:
+            'The component is replaced, but there is currently no ' +
             'way to change the right button or title of the current route',
-        }
+        },
       });
     });
   };
@@ -219,9 +222,7 @@ class NavigatorIOSExamplePage extends React.Component {
       <View>
         <TouchableHighlight onPress={onPress}>
           <View style={styles.row}>
-            <Text style={styles.rowText}>
-              {title}
-            </Text>
+            <Text style={styles.rowText}>{title}</Text>
           </View>
         </TouchableHighlight>
         <View style={styles.separator} />
@@ -230,7 +231,7 @@ class NavigatorIOSExamplePage extends React.Component {
   };
 }
 
-class NavigatorIOSExample extends React.Component {
+class NavigatorIOSExample extends React.Component<$FlowFixMeProps> {
   static title = '<NavigatorIOS>';
   static description = 'iOS navigation capabilities';
   static external = true;

@@ -1,18 +1,17 @@
 /**
  * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
  *
- * This source code is licensed under the BSD-style license found in the
- * LICENSE file in the root directory of this source tree. An additional grant
- * of patent rights can be found in the PATENTS file in the same directory.
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
  *
- * @providesModule AppContainer
+ * @format
  * @flow
  */
 
 'use strict';
 
 const EmitterSubscription = require('EmitterSubscription');
+const PropTypes = require('prop-types');
 const RCTDeviceEventEmitter = require('RCTDeviceEventEmitter');
 const React = require('React');
 const ReactNative = require('ReactNative');
@@ -22,26 +21,28 @@ const View = require('View');
 type Context = {
   rootTag: number,
 };
-type Props = {
-  children?: React.Children,
-  rootTag: number,
-};
-type State = {
-  inspector: ?React.Element<*>,
-  mainKey: number,
-};
 
-class AppContainer extends React.Component {
-  props: Props;
+type Props = $ReadOnly<{|
+  children?: React.Node,
+  rootTag: number,
+  WrapperComponent?: ?React.ComponentType<any>,
+|}>;
+
+type State = {|
+  inspector: ?React.Node,
+  mainKey: number,
+|};
+
+class AppContainer extends React.Component<Props, State> {
   state: State = {
     inspector: null,
     mainKey: 1,
   };
-  _mainRef: ?React.Element<*>;
+  _mainRef: ?React.ElementRef<typeof View>;
   _subscription: ?EmitterSubscription = null;
 
   static childContextTypes = {
-    rootTag: React.PropTypes.number,
+    rootTag: PropTypes.number,
   };
 
   getChildContext(): Context {
@@ -57,19 +58,20 @@ class AppContainer extends React.Component {
           'toggleElementInspector',
           () => {
             const Inspector = require('Inspector');
-            const inspector = this.state.inspector
-              ? null
-              : <Inspector
-                  inspectedViewTag={ReactNative.findNodeHandle(this._mainRef)}
-                  onRequestRerenderApp={(updateInspectedViewTag) => {
-                    this.setState(
-                      (s) => ({mainKey: s.mainKey + 1}),
-                      () => updateInspectedViewTag(
-                        ReactNative.findNodeHandle(this._mainRef)
-                      )
-                    );
-                  }}
-                />;
+            const inspector = this.state.inspector ? null : (
+              <Inspector
+                inspectedViewTag={ReactNative.findNodeHandle(this._mainRef)}
+                onRequestRerenderApp={updateInspectedViewTag => {
+                  this.setState(
+                    s => ({mainKey: s.mainKey + 1}),
+                    () =>
+                      updateInspectedViewTag(
+                        ReactNative.findNodeHandle(this._mainRef),
+                      ),
+                  );
+                }}
+              />
+            );
             this.setState({inspector});
           },
         );
@@ -78,12 +80,12 @@ class AppContainer extends React.Component {
   }
 
   componentWillUnmount(): void {
-    if (this._subscription) {
+    if (this._subscription != null) {
       this._subscription.remove();
     }
   }
 
-  render(): React.Element<*> {
+  render(): React.Node {
     let yellowBox = null;
     if (__DEV__) {
       if (!global.__RCTProfileIsProfiling) {
@@ -92,15 +94,26 @@ class AppContainer extends React.Component {
       }
     }
 
+    let innerView = (
+      <View
+        collapsable={!this.state.inspector}
+        key={this.state.mainKey}
+        pointerEvents="box-none"
+        style={styles.appContainer}
+        ref={ref => {
+          this._mainRef = ref;
+        }}>
+        {this.props.children}
+      </View>
+    );
+
+    const Wrapper = this.props.WrapperComponent;
+    if (Wrapper != null) {
+      innerView = <Wrapper>{innerView}</Wrapper>;
+    }
     return (
       <View style={styles.appContainer} pointerEvents="box-none">
-        <View
-          collapsable={!this.state.inspector}
-          key={this.state.mainKey}
-          pointerEvents="box-none"
-          style={styles.appContainer} ref={(ref) => {this._mainRef = ref;}}>
-          {this.props.children}
-        </View>
+        {innerView}
         {yellowBox}
         {this.state.inspector}
       </View>
@@ -113,5 +126,12 @@ const styles = StyleSheet.create({
     flex: 1,
   },
 });
+
+if (__DEV__) {
+  if (!global.__RCTProfileIsProfiling) {
+    const YellowBox = require('YellowBox');
+    YellowBox.install();
+  }
+}
 
 module.exports = AppContainer;

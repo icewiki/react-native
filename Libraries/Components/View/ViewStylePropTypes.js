@@ -1,26 +1,26 @@
 /**
  * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
  *
- * This source code is licensed under the BSD-style license found in the
- * LICENSE file in the root directory of this source tree. An additional grant
- * of patent rights can be found in the PATENTS file in the same directory.
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
  *
- * @providesModule ViewStylePropTypes
+ * @format
  * @flow
  */
+
 'use strict';
 
-var ColorPropType = require('ColorPropType');
-var LayoutPropTypes = require('LayoutPropTypes');
-var ReactPropTypes = require('prop-types');
-var ShadowPropTypesIOS = require('ShadowPropTypesIOS');
-var TransformPropTypes = require('TransformPropTypes');
+const AnimatedNode = require('AnimatedNode');
+const ColorPropType = require('ColorPropType');
+const LayoutPropTypes = require('LayoutPropTypes');
+const ReactPropTypes = require('prop-types');
+const ShadowPropTypesIOS = require('ShadowPropTypesIOS');
+const TransformPropTypes = require('TransformPropTypes');
 
 /**
  * Warning: Some of these properties may not be supported in all releases.
  */
-var ViewStylePropTypes = {
+const ViewStylePropTypes = {
   ...LayoutPropTypes,
   ...ShadowPropTypesIOS,
   ...TransformPropTypes,
@@ -31,18 +31,24 @@ var ViewStylePropTypes = {
   borderRightColor: ColorPropType,
   borderBottomColor: ColorPropType,
   borderLeftColor: ColorPropType,
-  borderRadius: ReactPropTypes.number,
-  borderTopLeftRadius: ReactPropTypes.number,
-  borderTopRightRadius: ReactPropTypes.number,
-  borderBottomLeftRadius: ReactPropTypes.number,
-  borderBottomRightRadius: ReactPropTypes.number,
+  borderStartColor: ColorPropType,
+  borderEndColor: ColorPropType,
+  borderRadius: ReactPropTypes.oneOfType([ReactPropTypes.number, ReactPropTypes.instanceOf(AnimatedNode)]),
+  borderTopLeftRadius: ReactPropTypes.oneOfType([ReactPropTypes.number, ReactPropTypes.instanceOf(AnimatedNode)]),
+  borderTopRightRadius: ReactPropTypes.oneOfType([ReactPropTypes.number, ReactPropTypes.instanceOf(AnimatedNode)]),
+  borderTopStartRadius: ReactPropTypes.oneOfType([ReactPropTypes.number, ReactPropTypes.instanceOf(AnimatedNode)]),
+  borderTopEndRadius: ReactPropTypes.oneOfType([ReactPropTypes.number, ReactPropTypes.instanceOf(AnimatedNode)]),
+  borderBottomLeftRadius: ReactPropTypes.oneOfType([ReactPropTypes.number, ReactPropTypes.instanceOf(AnimatedNode)]),
+  borderBottomRightRadius: ReactPropTypes.oneOfType([ReactPropTypes.number, ReactPropTypes.instanceOf(AnimatedNode)]),
+  borderBottomStartRadius: ReactPropTypes.oneOfType([ReactPropTypes.number, ReactPropTypes.instanceOf(AnimatedNode)]),
+  borderBottomEndRadius: ReactPropTypes.oneOfType([ReactPropTypes.number, ReactPropTypes.instanceOf(AnimatedNode)]),
   borderStyle: ReactPropTypes.oneOf(['solid', 'dotted', 'dashed']),
-  borderWidth: ReactPropTypes.number,
-  borderTopWidth: ReactPropTypes.number,
-  borderRightWidth: ReactPropTypes.number,
-  borderBottomWidth: ReactPropTypes.number,
-  borderLeftWidth: ReactPropTypes.number,
-  opacity: ReactPropTypes.number,
+  borderWidth: ReactPropTypes.oneOfType([ReactPropTypes.number, ReactPropTypes.instanceOf(AnimatedNode)]),
+  borderTopWidth: ReactPropTypes.oneOfType([ReactPropTypes.number, ReactPropTypes.instanceOf(AnimatedNode)]),
+  borderRightWidth: ReactPropTypes.oneOfType([ReactPropTypes.number, ReactPropTypes.instanceOf(AnimatedNode)]),
+  borderBottomWidth: ReactPropTypes.oneOfType([ReactPropTypes.number, ReactPropTypes.instanceOf(AnimatedNode)]),
+  borderLeftWidth: ReactPropTypes.oneOfType([ReactPropTypes.number, ReactPropTypes.instanceOf(AnimatedNode)]),
+  opacity: ReactPropTypes.oneOfType([ReactPropTypes.number, ReactPropTypes.instanceOf(AnimatedNode)]),
   /**
    * (Android-only) Sets the elevation of a view, using Android's underlying
    * [elevation API](https://developer.android.com/training/material/shadows-clipping.html#Elevation).

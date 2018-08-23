@@ -1,4 +1,7 @@
-// Copyright 2004-present Facebook. All Rights Reserved.
+// Copyright (c) 2004-present, Facebook, Inc.
+
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
 
 package com.facebook.react.bridge;
 
@@ -17,7 +20,7 @@ import com.facebook.proguard.annotations.DoNotStrip;
 public class ReactMarker {
 
   public interface MarkerListener {
-    void logMarker(ReactMarkerConstants name, @Nullable String tag, int instanceKey);
+    void logMarker(@ReactMarkerConstants String name, @Nullable String tag, int instanceKey);
   };
 
   // Use a list instead of a set here because we expect the number of listeners
@@ -49,43 +52,22 @@ public class ReactMarker {
   }
 
   @DoNotStrip
-  public static void logMarker(String name) {
-    logMarker(name, null);
+  public static void logMarker(@ReactMarkerConstants String name) {
+    logMarker(name, null, 0);
   }
 
   @DoNotStrip
-  public static void logMarker(String name, int instanceKey) {
+  public static void logMarker(@ReactMarkerConstants String name, int instanceKey) {
     logMarker(name, null, instanceKey);
   }
 
   @DoNotStrip
-  public static void logMarker(String name, @Nullable String tag) {
+  public static void logMarker(@ReactMarkerConstants String name, @Nullable String tag) {
     logMarker(name, tag, 0);
   }
 
   @DoNotStrip
-  public static void logMarker(String name, @Nullable String tag, int instanceKey) {
-    ReactMarkerConstants marker = ReactMarkerConstants.valueOf(name);
-    logMarker(marker, tag, instanceKey);
-  }
-
-  @DoNotStrip
-  public static void logMarker(ReactMarkerConstants name) {
-    logMarker(name, null, 0);
-  }
-
-  @DoNotStrip
-  public static void logMarker(ReactMarkerConstants name, int instanceKey) {
-    logMarker(name, null, instanceKey);
-  }
-
-  @DoNotStrip
-  public static void logMarker(ReactMarkerConstants name, @Nullable String tag) {
-    logMarker(name, null, 0);
-  }
-
-  @DoNotStrip
-  public static void logMarker(ReactMarkerConstants name, @Nullable String tag, int instanceKey) {
+  public static void logMarker(@ReactMarkerConstants String name, @Nullable String tag, int instanceKey) {
     synchronized(sListeners) {
       for (MarkerListener listener : sListeners) {
         listener.logMarker(name, tag, instanceKey);

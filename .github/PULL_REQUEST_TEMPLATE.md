@@ -1,18 +1,37 @@
-<details>
-  Thanks for submitting a PR! Please read these instructions carefully:
+Thank you for sending the PR! We appreciate you spending the time to work on these changes. 
+Help us understand your motivation by explaining why you decided to make this change.
 
-  - [ ] Explain the **motivation** for making this change.
-  - [ ] Provide a **test plan** demonstrating that the code is solid.
-  - [ ] Match the **code formatting** of the rest of the codebase.
-  - [ ] Target the `master` branch, NOT a "stable" branch.
+If this PR fixes an issue, type "Fixes #issueNumber" to automatically close the issue when the PR is merged.
 
-  Please read the [Contribution Guidelines](https://github.com/facebook/react-native/blob/master/CONTRIBUTING.md) to learn more about contributing to React Native.
-</details>
+Test Plan:
+----------
+Write your test plan here. If you changed any code, please provide us with clear instructions on how you verified your changes work. Bonus points for screenshots and videos!
 
-## Motivation (required)
+Release Notes:
+--------------
+Help reviewers and the release process by writing your own release notes. See below for an example.
 
-_What existing problem does the pull request solve?_
+[CATEGORY] [TYPE] [LOCATION] - Message
 
-## Test Plan (required)
+<!--
+  **INTERNAL and MINOR tagged notes will not be included in the next version's final release notes.**
 
-_A good test plan has the exact commands you ran and their output, provides screenshots or videos if the pull request changes UI or updates the website._
+    CATEGORY
+  [----------]      TYPE
+  [ CLI      ] [-------------]    LOCATION
+  [ DOCS     ] [ BREAKING    ] [-------------]
+  [ GENERAL  ] [ BUGFIX      ] [ {Component} ]
+  [ INTERNAL ] [ ENHANCEMENT ] [ {Filename}  ]
+  [ IOS      ] [ FEATURE     ] [ {Directory} ]   |-----------|
+  [ ANDROID  ] [ MINOR       ] [ {Framework} ] - | {Message} |
+  [----------] [-------------] [-------------]   |-----------|
+
+ EXAMPLES:
+
+ [IOS] [BREAKING] [FlatList] - Change a thing that breaks other things
+ [ANDROID] [BUGFIX] [TextInput] - Did a thing to TextInput
+ [CLI] [FEATURE] [local-cli/info/info.js] - CLI easier to do things with
+ [DOCS] [BUGFIX] [GettingStarted.md] - Accidentally a thing/word
+ [GENERAL] [ENHANCEMENT] [Yoga] - Added new yoga thing/position
+ [INTERNAL] [FEATURE] [./scripts] - Added thing to script that nobody will see
+-->

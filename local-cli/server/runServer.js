@@ -1,10 +1,8 @@
 /**
  * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
  *
- * This source code is licensed under the BSD-style license found in the
- * LICENSE file in the root directory of this source tree. An additional grant
- * of patent rights can be found in the PATENTS file in the same directory.
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
  *
  * @flow
  * @format
@@ -13,169 +11,104 @@
 'use strict';
 
 require('../../setupBabel')();
-const InspectorProxy = require('./util/inspectorProxy.js');
-const ReactPackager = require('metro-bundler');
-const Terminal = require('metro-bundler/build/lib/Terminal');
 
-const attachHMRServer = require('./util/attachHMRServer');
-const connect = require('connect');
-const copyToClipBoardMiddleware = require('./middleware/copyToClipBoardMiddleware');
-const cpuProfilerMiddleware = require('./middleware/cpuProfilerMiddleware');
-const defaultAssetExts = require('metro-bundler/build/defaults').assetExts;
-const defaultSourceExts = require('metro-bundler/build/defaults').sourceExts;
-const defaultPlatforms = require('metro-bundler/build/defaults').platforms;
-const defaultProvidesModuleNodeModules = require('metro-bundler/build/defaults')
-  .providesModuleNodeModules;
-const fs = require('fs');
-const getDevToolsMiddleware = require('./middleware/getDevToolsMiddleware');
-const http = require('http');
-const https = require('https');
-const indexPageMiddleware = require('./middleware/indexPage');
-const loadRawBodyMiddleware = require('./middleware/loadRawBodyMiddleware');
-const messageSocket = require('./util/messageSocket.js');
-const openStackFrameInEditorMiddleware = require('./middleware/openStackFrameInEditorMiddleware');
+const Metro = require('metro');
+
+const {Terminal} = require('metro-core');
+
+const messageSocket = require('./util/messageSocket');
+const morgan = require('morgan');
 const path = require('path');
-const statusPageMiddleware = require('./middleware/statusPageMiddleware.js');
-const systraceProfileMiddleware = require('./middleware/systraceProfileMiddleware.js');
-const unless = require('./middleware/unless');
-const webSocketProxy = require('./util/webSocketProxy.js');
+const webSocketProxy = require('./util/webSocketProxy');
+const MiddlewareManager = require('./middleware/MiddlewareManager');
 
-import type {ConfigT} from '../util/Config';
-import type {Reporter} from 'metro-bundler/build/lib/reporting';
+import type {ConfigT} from 'metro-config/src/configTypes.flow';
 
 export type Args = {|
   +assetExts: $ReadOnlyArray<string>,
+  +cert: string,
+  +customLogReporterPath?: string,
   +host: string,
+  +https: boolean,
   +maxWorkers: number,
+  +key: string,
   +nonPersistent: boolean,
   +platforms: $ReadOnlyArray<string>,
   +port: number,
-  +projectRoots: $ReadOnlyArray<string>,
+  +projectRoot: string,
+  +providesModuleNodeModules: Array<string>,
   +resetCache: boolean,
   +sourceExts: $ReadOnlyArray<string>,
+  +transformer?: string,
   +verbose: boolean,
+  +watchFolders: $ReadOnlyArray<string>,
 |};
 
-function runServer(
-  args: Args,
-  config: ConfigT,
-  // FIXME: this is weird design. The top-level should pass down a custom
-  // reporter rather than passing it up as argument to an event.
-  startedCallback: (reporter: Reporter) => mixed,
-  readyCallback: (reporter: Reporter) => mixed,
-) {
-  var wsProxy = null;
-  var ms = null;
-  const packagerServer = getPackagerServer(args, config);
-  startedCallback(packagerServer._reporter);
+async function runServer(args: Args, config: ConfigT) {
+  const terminal = new Terminal(process.stdout);
+  const ReporterImpl = getReporterImpl(args.customLogReporterPath || null);
+  const reporter = new ReporterImpl(terminal);
+  const middlewareManager = new MiddlewareManager(args);
 
-  const inspectorProxy = new InspectorProxy();
-  const app = connect()
-    .use(loadRawBodyMiddleware)
-    .use(connect.compress())
-    .use(
-      getDevToolsMiddleware(args, () => wsProxy && wsProxy.isChromeConnected()),
-    )
-    .use(getDevToolsMiddleware(args, () => ms && ms.isChromeConnected()))
-    .use(openStackFrameInEditorMiddleware(args))
-    .use(copyToClipBoardMiddleware)
-    .use(statusPageMiddleware)
-    .use(systraceProfileMiddleware)
-    .use(cpuProfilerMiddleware)
-    .use(indexPageMiddleware)
-    .use(
-      unless('/inspector', inspectorProxy.processRequest.bind(inspectorProxy)),
-    )
-    .use(packagerServer.processRequest.bind(packagerServer));
+  middlewareManager.getConnectInstance().use(morgan('combined'));
 
-  args.projectRoots.forEach(root => app.use(connect.static(root)));
+  args.watchFolders.forEach(middlewareManager.serveStatic);
 
-  app.use(connect.logger()).use(connect.errorHandler());
+  config.maxWorkers = args.maxWorkers;
+  config.server.port = args.port;
+  config.reporter = reporter;
+  config.resetCache = args.resetCache;
+  config.server.enhanceMiddleware = middleware =>
+    middlewareManager.getConnectInstance().use(middleware);
 
-  if (args.https && (!args.key || !args.cert)) {
-    throw new Error('Cannot use https without specifying key and cert options');
-  }
-
-  const serverInstance = args.https
-    ? https.createServer(
-        {
-          key: fs.readFileSync(args.key),
-          cert: fs.readFileSync(args.cert),
-        },
-        app,
-      )
-    : http.createServer(app);
-
-  serverInstance.listen(args.port, args.host, 511, function() {
-    attachHMRServer({
-      httpServer: serverInstance,
-      path: '/hot',
-      packagerServer,
-    });
-
-    wsProxy = webSocketProxy.attachToServer(serverInstance, '/debugger-proxy');
-    ms = messageSocket.attachToServer(serverInstance, '/message');
-    inspectorProxy.attachToServer(serverInstance, '/inspector');
-    readyCallback(packagerServer._reporter);
+  const serverInstance = await Metro.runServer(config, {
+    host: args.host,
+    secure: args.https,
+    secureCert: args.cert,
+    secureKey: args.key,
+    hmrEnabled: true,
   });
-  // Disable any kind of automatic timeout behavior for incoming
-  // requests in case it takes the packager more than the default
-  // timeout of 120 seconds to respond to a request.
-  serverInstance.timeout = 0;
+
+  const wsProxy = webSocketProxy.attachToServer(
+    serverInstance,
+    '/debugger-proxy',
+  );
+  const ms = messageSocket.attachToServer(serverInstance, '/message');
+  middlewareManager.attachDevToolsSocket(wsProxy);
+  middlewareManager.attachDevToolsSocket(ms);
+
+  // In Node 8, the default keep-alive for an HTTP connection is 5 seconds. In
+  // early versions of Node 8, this was implemented in a buggy way which caused
+  // some HTTP responses (like those containing large JS bundles) to be
+  // terminated early.
+  //
+  // As a workaround, arbitrarily increase the keep-alive from 5 to 30 seconds,
+  // which should be enough to send even the largest of JS bundles.
+  //
+  // For more info: https://github.com/nodejs/node/issues/13391
+  //
+  // $FlowFixMe (site=react_native_fb)
+  serverInstance.keepAliveTimeout = 30000;
 }
 
-function getPackagerServer(args, config) {
-  const transformModulePath = args.transformer
-    ? path.resolve(args.transformer)
-    : typeof config.getTransformModulePath === 'function'
-        ? config.getTransformModulePath()
-        : undefined;
-
-  const providesModuleNodeModules =
-    args.providesModuleNodeModules || defaultProvidesModuleNodeModules;
-
-  let LogReporter;
-  if (args.customLogReporterPath) {
-    try {
-      // First we let require resolve it, so we can require packages in node_modules
-      // as expected. eg: require('my-package/reporter');
-      /* $FlowFixMe: can't type dynamic require */
-      LogReporter = require(args.customLogReporterPath);
-    } catch (e) {
-      // If that doesn't work, then we next try relative to the cwd, eg:
-      // require('./reporter');
-      /* $FlowFixMe: can't type dynamic require */
-      LogReporter = require(path.resolve(args.customLogReporterPath));
-    }
-  } else {
-    LogReporter = require('metro-bundler/build/lib/TerminalReporter');
+function getReporterImpl(customLogReporterPath: ?string) {
+  if (customLogReporterPath == null) {
+    return require('metro/src/lib/TerminalReporter');
   }
-
-  /* $FlowFixMe: Flow is wrong, Node.js docs specify that process.stdout is an
-   * instance of a net.Socket (a local socket, not network). */
-  const terminal = new Terminal(process.stdout);
-  return ReactPackager.createServer({
-    assetExts: defaultAssetExts.concat(args.assetExts),
-    blacklistRE: config.getBlacklistRE(),
-    cacheVersion: '3',
-    extraNodeModules: config.extraNodeModules,
-    getTransformOptions: config.getTransformOptions,
-    hasteImpl: config.hasteImpl,
-    maxWorkers: args.maxWorkers,
-    platforms: defaultPlatforms.concat(args.platforms),
-    polyfillModuleNames: config.getPolyfillModuleNames(),
-    postMinifyProcess: config.postMinifyProcess,
-    postProcessModules: config.postProcessModules,
-    projectRoots: args.projectRoots,
-    providesModuleNodeModules: providesModuleNodeModules,
-    reporter: new LogReporter(terminal),
-    resetCache: args.resetCache,
-    sourceExts: defaultSourceExts.concat(args.sourceExts),
-    transformModulePath: transformModulePath,
-    verbose: args.verbose,
-    watch: !args.nonPersistent,
-    workerPath: config.getWorkerPath(),
-  });
+  try {
+    // First we let require resolve it, so we can require packages in node_modules
+    // as expected. eg: require('my-package/reporter');
+    /* $FlowFixMe: can't type dynamic require */
+    return require(customLogReporterPath);
+  } catch (e) {
+    if (e.code !== 'MODULE_NOT_FOUND') {
+      throw e;
+    }
+    // If that doesn't work, then we next try relative to the cwd, eg:
+    // require('./reporter');
+    /* $FlowFixMe: can't type dynamic require */
+    return require(path.resolve(customLogReporterPath));
+  }
 }
 
 module.exports = runServer;
